@@ -1,0 +1,2 @@
+key = "RandomLetters"
+return key
