@@ -1,2 +1,2 @@
-key = "bfdhbnbHBGYSBDHJBGYbhjebfrygbfu346bchudsbUHNYB23bt6r4bhudfbvty6BUHjb27t3rb"
+key = "SNJDNBYn4jkb5rhunjkn32nNYNKNUHBSIJDBA&UIB&NUBTYBJnfdjksnfsd"
 return key
