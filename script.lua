@@ -1,4 +1,4 @@
-local library = oadstring(game:HttpGet("https://raw.githubusercontent.com/Scissors222/hate/refs/heads/main/pepsilib.lua"))()
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Scissors222/hate/refs/heads/main/pepsilib.lua"))()
 		local Wait = library.subs.Wait
 
 		local RunService = game:GetService("RunService")
