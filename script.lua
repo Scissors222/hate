@@ -6,6 +6,8 @@ local Players = game:GetService("Players")
 local Camera = game:GetService("Workspace").CurrentCamera
 local UserInputService = game:GetService("UserInputService")
 local TestService = game:GetService("TestService")
+local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
 
 local fovocupation = 1
 local fov = true
@@ -43,6 +45,73 @@ local rad = math.rad;
 local tan = math.tan;
 local floor = math.floor;
 local boxcolor = Color3.fromRGB(255,255,255)
+local Holding = false
+
+local AimbotEnabled = false
+local TeamCheck = true
+local AimPart = "Head"
+local Sensitivity = 0
+
+local CircleSides = 64
+local CircleColor = Color3.fromRGB(255, 255, 255)
+local CircleTransparency = 1
+local CircleRadius = 80
+local CircleFilled = false
+local CircleVisible = true
+local CircleThickness = 0
+
+local FOVCircle = Drawing.new("Circle")
+FOVCircle.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+FOVCircle.Radius = CircleRadius
+FOVCircle.Filled = CircleFilled
+FOVCircle.Color = CircleColor
+FOVCircle.Visible = CircleVisible
+FOVCircle.Radius = CircleRadius
+FOVCircle.Transparency = CircleTransparency
+FOVCircle.NumSides = CircleSides
+FOVCircle.Thickness = CircleThickness
+
+local function GetClosestPlayer()
+	local MaximumDistance = CircleRadius
+	local Target = nil
+
+	for _, v in next, Players:GetPlayers() do
+		if v.Name ~= LocalPlayer.Name then
+			if TeamCheck == true then
+				if v.Team ~= LocalPlayer.Team then
+					if v.Character ~= nil then
+						if v.Character:FindFirstChild("HumanoidRootPart") ~= nil then
+							if v.Character:FindFirstChild("Humanoid") ~= nil and v.Character:FindFirstChild("Humanoid").Health ~= 0 then
+								local ScreenPoint = Camera:WorldToScreenPoint(v.Character:WaitForChild("HumanoidRootPart", math.huge).Position)
+								local VectorDistance = (Vector2.new(UserInputService:GetMouseLocation().X, UserInputService:GetMouseLocation().Y) - Vector2.new(ScreenPoint.X, ScreenPoint.Y)).Magnitude
+
+								if VectorDistance < MaximumDistance then
+									Target = v
+								end
+							end
+						end
+					end
+				end
+			else
+				if v.Character ~= nil then
+					if v.Character:FindFirstChild("HumanoidRootPart") ~= nil then
+						if v.Character:FindFirstChild("Humanoid") ~= nil and v.Character:FindFirstChild("Humanoid").Health ~= 0 then
+							local ScreenPoint = Camera:WorldToScreenPoint(v.Character:WaitForChild("HumanoidRootPart", math.huge).Position)
+							local VectorDistance = (Vector2.new(UserInputService:GetMouseLocation().X, UserInputService:GetMouseLocation().Y) - Vector2.new(ScreenPoint.X, ScreenPoint.Y)).Magnitude
+
+							if VectorDistance < MaximumDistance then
+								Target = v
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+
+	return Target
+end
+
 
 local function create_esp(player)
 	local esp = {};
@@ -101,8 +170,8 @@ RunService.RenderStepped:Connect(update_esp);
 
 local function CreateTracers()
 	if TracersVisible == true then
-		for _, v in next, Players:GetPlayers() do
-			if v.Name ~= game.Players.LocalPlayer.Name then
+		for _, v in pairs(game.Workspace:GetChildren()) do
+			if game.Players.LocalPlayer.Character.Name ~= v.Name then
 				local TracerLine = Drawing.new("Line")
 
 				RunService.RenderStepped:Connect(function()
@@ -364,6 +433,9 @@ local EspSection = VisualsTab:CreateSection({
 local WorldSection = VisualsTab:CreateSection({
 	Name = "World"
 })
+local AimbotSection = CombatTab:CreateSection({
+	Name = "Aimbot"
+})
 GunsSection:AddDropdown({
 	Name = "Guns",
 	Value = nil,
@@ -618,3 +690,61 @@ WorldSection:AddSlider({
 		fovocupation = Value / 10
 	end,
 })
+AimbotSection:AddToggle({
+	Name = "Aimbot",
+	Flag = "AimFlag",
+	Value = false,
+	Callback = function(Value)
+		AimbotEnabled = Value
+	end,
+})
+AimbotSection:AddSlider({
+	Name = "FOV Size",
+	Flag = "FOVSIZEFlag",
+	Value = 80,
+	Min = 10,
+	Max = 240,
+	Callback = function(Value)
+		CircleRadius = Value
+	end,
+})
+AimbotSection:AddColorpicker({
+	Name = "FOV Color",
+	Flag = "FOVColorFlag",
+	Value = Color3.fromRGB(255, 255, 255),
+	Callback = function(Value)
+		CircleColor = Value
+	end,
+})
+
+UserInputService.InputBegan:Connect(function(Input)
+	if Input.UserInputType == Enum.UserInputType.MouseButton2 then
+		Holding = true
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(Input)
+	if Input.UserInputType == Enum.UserInputType.MouseButton2 then
+		Holding = false
+	end
+end)
+
+RunService.RenderStepped:Connect(function()
+	if AimbotEnabled == true then
+		FOVCircle.Position = Vector2.new(UserInputService:GetMouseLocation().X, UserInputService:GetMouseLocation().Y)
+		FOVCircle.Radius = CircleRadius
+		FOVCircle.Filled = CircleFilled
+		FOVCircle.Color = CircleColor
+		FOVCircle.Visible = CircleVisible
+		FOVCircle.Radius = CircleRadius
+		FOVCircle.Transparency = CircleTransparency
+		FOVCircle.NumSides = CircleSides
+		FOVCircle.Thickness = CircleThickness
+	else
+		FOVCircle.Transparency = 0
+	end
+
+	if Holding == true and AimbotEnabled == true then
+		TweenService:Create(Camera, TweenInfo.new(Sensitivity, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {CFrame = CFrame.new(Camera.CFrame.Position, GetClosestPlayer().Character[AimPart].Position)}):Play()
+	end
+end)
